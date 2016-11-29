@@ -21,10 +21,12 @@
             android:layout_height="wrap_content"
             android:text="当前值:" />
 
-        <TextView
-            android:id="@+id/tv_number"
+        <EditText
+            android:id="@+id/et_number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:inputType="number"
+            android:minWidth="100dp"
             android:text="100M"
             android:textColor="#ff000000"
             android:textSize="22sp" />
@@ -35,8 +37,10 @@
     <com.my.ScrollTipView
         android:id="@+id/scroll_tip"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#f1f1f1"
-        android:layout_marginTop="30dp" />
+        android:layout_height="100dp"
+        android:layout_marginTop="30dp"
+        android:background="#f1f1f1" />
+
+
 
 </LinearLayout>

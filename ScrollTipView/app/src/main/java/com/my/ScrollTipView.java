@@ -1,6 +1,8 @@
 package com.my;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -8,7 +10,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * AUTHOR:       Yuan.Meng
@@ -17,24 +21,24 @@ import android.widget.TextView;
  * DESC:
  */
 
-public class ScrollTipView extends View {
+public class ScrollTipView<T extends TextView> extends View {
 
     private Paint linePaint;//线的画笔
     private Paint textPaint;//文字画笔
 
 
     private int viewWidth;//整个控件宽度
-    private int ImageHeight = 30;//游标的直径
-    private int LINE_HEIGHT = 10;//线的宽度
+    private int ImageHeight = 60;//游标的高度
+    private int LINE_HEIGHT = 5;//线的宽度
     private int textSziePx = 44;//字体大小
     private int VIEW_PADDING_LEFT_RIGHT = 50;//控件左右边距
     private int TEXT_MARGIN_TOP = 10;//文字与线之间的间隔
-
+    private Bitmap bitmap;
 
     private int currentProgress = 0;
 
 
-    private TextView textView;
+    private T textView;
 
 
     public ScrollTipView(Context context) {
@@ -61,10 +65,20 @@ public class ScrollTipView extends View {
 
         //画笔
         linePaint = new Paint();
-        linePaint.setColor(context.getResources().getColor(R.color.colorAccent));
         textPaint = new Paint();
         textPaint.setColor(Color.GRAY);
         textPaint.setTextSize(textSziePx);
+
+        //压缩图片
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(getResources(), R.mipmap.icon_arrow, options);
+        //宽度 = 高度的0.775倍，根据宽度计算出合适的压缩比例
+        options.inSampleSize = calculateInSampleSize(options, (int) (ImageHeight * 0.775));
+        options.inJustDecodeBounds = false;
+        ImageHeight = options.outHeight;
+        bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.icon_arrow, options);
+
     }
 
 
@@ -74,12 +88,12 @@ public class ScrollTipView extends View {
 
         float lastI = 0;
         //画线条-渐变
-        for (float i = 0.1f; i <= 1.05f; i = i + 0.1f) {
+        for (float i = 0.1f; i <= 1.02f; i += 0.05f) {
             //改变画笔颜色
-            if (i <=  0.6f) {
-                linePaint.setColor(Color.argb(255, (int) (255 * (1f - i+0.1f)), (int) (255 * i+0.1f), 0));
+            if (i <= 0.7f) {
+                linePaint.setColor(Color.argb(255, (int) (255 * (1f - i + 0.1f)), (int) (255 * i + 0.1f), 0));
             } else {
-                linePaint.setColor(Color.argb(255, 22, 255, 0));
+                linePaint.setColor(Color.argb(255, 32, 233, 22));
             }
 
 
@@ -90,7 +104,7 @@ public class ScrollTipView extends View {
              * 参数4：右下坐标点y轴
              * 参数5：画笔
              */
-            canvas.drawRect(viewWidth * lastI + VIEW_PADDING_LEFT_RIGHT, ImageHeight + TEXT_MARGIN_TOP, viewWidth * i + VIEW_PADDING_LEFT_RIGHT, ImageHeight + TEXT_MARGIN_TOP + LINE_HEIGHT, linePaint);
+            canvas.drawRect(viewWidth * lastI + VIEW_PADDING_LEFT_RIGHT, ImageHeight, viewWidth * i + VIEW_PADDING_LEFT_RIGHT, ImageHeight + LINE_HEIGHT, linePaint);
             lastI = i;
         }
         /**
@@ -100,9 +114,9 @@ public class ScrollTipView extends View {
          * 参数3：半径
          * 参数4：画笔
          */
-        canvas.drawCircle(viewWidth * ((float) currentProgress / 100) + VIEW_PADDING_LEFT_RIGHT / 2 + ImageHeight / 2, ImageHeight / 2, ImageHeight / 2, linePaint);
+        canvas.drawBitmap(bitmap, viewWidth * ((float) currentProgress / 100) + VIEW_PADDING_LEFT_RIGHT / 2, ImageHeight / 2, new Paint());
         if (textView != null) {
-            textView.setText(currentProgress + "M");
+            textView.setText(currentProgress + "");
         }
         /**
          * 画指示文字
@@ -111,9 +125,9 @@ public class ScrollTipView extends View {
          * 参数3：左上y轴坐标
          * 参数4：画笔
          */
-        canvas.drawText("0M", VIEW_PADDING_LEFT_RIGHT, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
-        canvas.drawText("70M", viewWidth * 7 / 10, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
-        canvas.drawText("100M", viewWidth - VIEW_PADDING_LEFT_RIGHT, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
+        canvas.drawText("0%", VIEW_PADDING_LEFT_RIGHT, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
+        canvas.drawText("70%", viewWidth * 7 / 10, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
+        canvas.drawText("100%", viewWidth - VIEW_PADDING_LEFT_RIGHT, ImageHeight + LINE_HEIGHT + TEXT_MARGIN_TOP * 2 + textSziePx, textPaint);
     }
 
 
@@ -132,13 +146,16 @@ public class ScrollTipView extends View {
                 currentProgress = (int) (((currentX - VIEW_PADDING_LEFT_RIGHT) / viewWidth) * 100);
                 invalidate();
                 return true;
+            case MotionEvent.ACTION_UP:
+                Toast.makeText(this.getContext(), "TODO：" + currentProgress, Toast.LENGTH_SHORT).show();
+                break;
         }
         invalidate();
         return super.onTouchEvent(event);
     }
 
-    public void bindView(TextView textView) {
-        this.textView = textView;
+    public void bindView(T view) {
+        this.textView = view;
     }
 
 
@@ -150,7 +167,32 @@ public class ScrollTipView extends View {
             currentProgress = 100;
         }
         this.currentProgress = currentProgress;
+        Toast.makeText(this.getContext(), "TODO：" + currentProgress, Toast.LENGTH_SHORT).show();
         invalidate();
     }
 
+
+    public int getCurrentProgress() {
+        return currentProgress;
+    }
+
+    /**
+     * 根据预期宽度计算出图片的压缩比例
+     * @param options
+     * @param reqWidth  预期宽度
+     * @return
+     */
+    private int calculateInSampleSize(BitmapFactory.Options options,
+                                      int reqWidth) {
+        // 源图片的宽度
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+        if (width > reqWidth) {
+            // 计算出实际宽度和目标宽度的比率
+            final int widthRatio = Math.round((float) width / (float) reqWidth);
+            inSampleSize = widthRatio;
+        }
+        return inSampleSize;
+
+    }
 }
